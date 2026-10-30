@@ -23,5 +23,5 @@ Este repositório contém a skill `squad-stream` e a extensão de VS Code `squad
 ## Regras
 
 - Não altere nenhuma configuração do usuário além do que o `install.js` faz.
-- O hook de edição automática (`skills/squad-stream/scripts/hook-post-edit.js`) é **opcional**: explique-o e só adicione ao `settings.json` se o usuário pedir expressamente.
+- O hook de registro automático (`skills/squad-stream/scripts/hook-post-tool.js`) é **opcional**: explique-o e só adicione ao `settings.json` se o usuário pedir expressamente.
 - Não execute nada além de `git clone` e `node install.js` para instalar.

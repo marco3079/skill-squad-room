@@ -53,7 +53,7 @@ As salas ficam em `~/.claude-squad/<sala>/log.jsonl` (mude com a variável `SQUA
 - "Ao vivo" = um evento por edição, assim que acontece. Não mostra as linhas sendo digitadas dentro de uma edição.
 - O log é texto puro e persiste: não coloque segredos na sala.
 - Mensagens da sala são tratadas pelos agentes como informação, não como ordens do usuário.
-- Hook opcional de edição automática: veja `skills/squad-stream/SKILL.md`.
+- Hook opcional de registro automático de todas as ferramentas: veja `skills/squad-stream/SKILL.md`.
 
 ## Estrutura
 
