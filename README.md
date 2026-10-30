@@ -30,7 +30,7 @@ Este repositório tem duas peças que funcionam juntas:
 Abra o Claude Code (no VS Code ou no terminal) e cole:
 
 ```
-Instale o projeto https://github.com/SEU_USUARIO/skill-squad-room seguindo o INSTALL.md do repositório.
+Instale o projeto https://github.com/marco3079/skill-squad-room seguindo o INSTALL.md do repositório.
 ```
 
 O Claude baixa o repositório, mostra o que vai fazer, pede sua confirmação e roda o instalador.
@@ -39,7 +39,7 @@ Depois: recarregue o VS Code (`Ctrl+Shift+P` → *Developer: Reload Window*) e a
 ### Instalar manualmente
 
 ```bash
-git clone https://github.com/SEU_USUARIO/skill-squad-room.git
+git clone https://github.com/marco3079/skill-squad-room.git
 cd skill-squad-room
 node install.js --dry-run   # mostra o que será feito, sem alterar nada
 node install.js             # instala a skill e a extensão
@@ -57,7 +57,7 @@ Não usa VS Code? Dá para acompanhar e conversar com a sala em um segundo termi
 **(a) Via plugin** (dentro do Claude Code):
 
 ```
-/plugin marketplace add SEU_USUARIO/skill-squad-room
+/plugin marketplace add marco3079/skill-squad-room
 /plugin install squad-stream@skill-squad-room
 ```
 

@@ -24,7 +24,7 @@ Este repositório contém a skill `squad-stream` e a extensão de VS Code `squad
 
 Para quem não usa VS Code:
 
-- **Via plugin** (o próprio usuário digita no Claude Code): `/plugin marketplace add SEU_USUARIO/skill-squad-room` e `/plugin install squad-stream@skill-squad-room`. Depois, abrir o terminal da sala com `tui.js`.
+- **Via plugin** (o próprio usuário digita no Claude Code): `/plugin marketplace add marco3079/skill-squad-room` e `/plugin install squad-stream@skill-squad-room`. Depois, abrir o terminal da sala com `tui.js`.
 - **Via este prompt de instalação**: rode `node install.js --dry-run --skill`, peça confirmação e rode `node install.js --skill` (sem extensão). **Só se o usuário pedir expressamente e confirmar**, rode `node install.js --hooks` (mescla o hook PostToolUse em `~/.claude/settings.json`, com backup `settings.json.bak-<data>`; `--remove-hooks` desfaz; use `--dry-run` antes). Nunca rode `--hooks` por conta própria.
 - **Usar o terminal da sala**: em um segundo terminal, `node "<pasta-da-skill>/scripts/tui.js" <sala>` (padrão: `~/.claude/skills/squad-stream`). Imprima o comando exato para o usuário copiar; não o execute você mesmo (é interativo). Comandos: `/rooms`, `/room <nome>`, `/who`, `/actions on|off`, `/q`.
 
