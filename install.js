@@ -8,9 +8,13 @@
 //   node install.js --extensions  só as extensões do VS Code (arquivos de dist/)
 //   node install.js --build       reempacota os .vsix a partir de extensions/ antes de instalar (precisa de npm/npx)
 //   node install.js --editor cursor   usa outro editor compatível com VS Code (padrão: code)
+//   node install.js --hooks           SÓ o hook de registro automático: mescla uma entrada PostToolUse em
+//                                     ~/.claude/settings.json (idempotente, com backup settings.json.bak-<data>)
+//   node install.js --remove-hooks    remove essa entrada do settings.json (com backup)
 //
 // O que faz: copia cada pasta de skills/ para ~/.claude/skills/ e instala os .vsix de dist/ pela CLI do editor.
-// O que NÃO faz: não altera settings.json, hooks, permissões nem nenhum outro arquivo seu.
+// O que NÃO faz por padrão: não altera settings.json, hooks, permissões nem nenhum outro arquivo seu.
+// Só com --hooks / --remove-hooks (explícitos) o settings.json é tocado; JSON inválido aborta sem alterar nada.
 
 const fs = require('fs');
 const os = require('os');
@@ -27,8 +31,10 @@ const onlyExt = has('--extensions');
 const here = __dirname;
 const skillsDir = path.join(here, 'skills');
 const extDir = path.join(here, 'extensions');
-const doSkill = (onlySkill || !onlyExt) && fs.existsSync(skillsDir);
-const doExt = (onlyExt || !onlySkill) && fs.existsSync(extDir);
+const hooksMode = has('--hooks') || has('--remove-hooks');
+// --hooks / --remove-hooks sozinhos só mexem no settings.json (a menos que --skill/--extensions também sejam passados)
+const doSkill = (onlySkill || (!onlyExt && !hooksMode)) && fs.existsSync(skillsDir);
+const doExt = (onlyExt || (!onlySkill && !hooksMode)) && fs.existsSync(extDir);
 const editor = opt('--editor', 'code');
 const log = (m) => console.log(m);
 const step = (m) => log(`${dry ? '[simulação] ' : ''}${m}`);
@@ -107,17 +113,77 @@ function installExtensions() {
   return ok;
 }
 
+const HOOK_MARK = 'squad-stream/scripts/hook-post-tool.js';
+
+function entryHasMark(entry) {
+  return !!entry && Array.isArray(entry.hooks) && entry.hooks.some((h) => h && typeof h.command === 'string' && h.command.includes(HOOK_MARK));
+}
+
+function manageHooks(remove) {
+  const claudeDir = path.join(os.homedir(), '.claude');
+  const file = path.join(claudeDir, 'settings.json');
+  let cfg = {};
+  let existed = false;
+  if (fs.existsSync(file)) {
+    existed = true;
+    const raw = fs.readFileSync(file, 'utf8');
+    if (raw.trim()) {
+      try { cfg = JSON.parse(raw); } catch (e) { log(`ERRO: ${file} não é um JSON válido (${e.message}). Nada foi alterado.`); return false; }
+      if (!cfg || typeof cfg !== 'object' || Array.isArray(cfg)) { log(`ERRO: ${file} não contém um objeto JSON. Nada foi alterado.`); return false; }
+    }
+  }
+  if (cfg.hooks !== undefined && (typeof cfg.hooks !== 'object' || cfg.hooks === null || Array.isArray(cfg.hooks))) { log('ERRO: "hooks" no settings.json tem formato inesperado. Nada foi alterado.'); return false; }
+  const cur = cfg.hooks && cfg.hooks.PostToolUse;
+  if (cur !== undefined && !Array.isArray(cur)) { log('ERRO: "hooks.PostToolUse" no settings.json tem formato inesperado. Nada foi alterado.'); return false; }
+  const list = cur || [];
+  const present = list.some(entryHasMark);
+
+  if (remove) {
+    if (!present) { log('Hook de registro automático não está no settings.json; nada a remover.'); return true; }
+    const kept = [];
+    for (const entry of list) {
+      if (!entryHasMark(entry)) { kept.push(entry); continue; }
+      const rest = entry.hooks.filter((h) => !(h && typeof h.command === 'string' && h.command.includes(HOOK_MARK)));
+      if (rest.length) kept.push({ ...entry, hooks: rest });
+    }
+    if (kept.length) cfg.hooks.PostToolUse = kept;
+    else { delete cfg.hooks.PostToolUse; if (!Object.keys(cfg.hooks).length) delete cfg.hooks; }
+    step(`Removendo o hook PostToolUse de ${file}`);
+  } else {
+    if (present) { log('Hook de registro automático já está no settings.json; nada a fazer.'); return true; }
+    const script = path.join(os.homedir(), '.claude', 'skills', 'squad-stream', 'scripts', 'hook-post-tool.js').split(path.sep).join('/');
+    cfg.hooks = cfg.hooks || {};
+    cfg.hooks.PostToolUse = [...list, { matcher: '*', hooks: [{ type: 'command', command: `node "${script}"` }] }];
+    step(`Adicionando o hook PostToolUse (matcher "*") em ${file}`);
+    if (!fs.existsSync(path.join(os.homedir(), '.claude', 'skills', 'squad-stream'))) log('  aviso: a skill ainda não está em ~/.claude/skills/squad-stream (rode: node install.js --skill).');
+  }
+  if (dry) return true;
+  fs.mkdirSync(claudeDir, { recursive: true });
+  if (existed) {
+    const bak = `${file}.bak-${new Date().toISOString().replace(/[-:T.Z]/g, '').slice(0, 17)}`;
+    fs.copyFileSync(file, bak);
+    log(`  backup: ${bak}`);
+  }
+  fs.writeFileSync(file, JSON.stringify(cfg, null, 2) + '\n');
+  return true;
+}
+
 log(`${path.basename(here)} — instalador`);
 let ok = true;
 if (doSkill) ok = installSkills() && ok;
 if (doExt) ok = installExtensions() && ok;
-if (!doSkill && !doExt) { log('Nada para instalar neste repositório com essas opções.'); process.exit(1); }
+if (hooksMode) {
+  if (has('--hooks') && has('--remove-hooks')) { log('ERRO: use --hooks OU --remove-hooks, não os dois.'); process.exit(1); }
+  ok = manageHooks(has('--remove-hooks')) && ok;
+}
+if (!doSkill && !doExt && !hooksMode) { log('Nada para instalar neste repositório com essas opções.'); process.exit(1); }
 
 if (dry) log('\nSimulação concluída. Nada foi alterado.');
 else if (ok) {
   log('\nConcluído.');
   if (doExt) log('→ Recarregue o VS Code: Ctrl+Shift+P → "Developer: Reload Window".');
   if (doSkill) log('→ Abra uma NOVA sessão do Claude Code para a skill aparecer.');
+  if (hooksMode) log('→ Abra uma NOVA sessão do Claude Code para o hook valer. Ele só grava quando há sala ativa.');
 } else {
   log('\nTerminou com erros (veja acima).');
   process.exit(1);

@@ -1,0 +1,11 @@
+{
+  "name": "skill-squad-room",
+  "owner": { "name": "SEU_USUARIO" },
+  "plugins": [
+    {
+      "name": "squad-stream",
+      "source": "./",
+      "description": "Subagentes em paralelo numa sala compartilhada, com registro automático de ações e visualizador/chat no terminal."
+    }
+  ]
+}

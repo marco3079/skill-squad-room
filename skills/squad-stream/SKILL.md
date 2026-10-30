@@ -39,6 +39,14 @@ Tipos de evento: `status` (plano/intenção/decisão), `note` (descoberta/erro),
 - **Outros agentes / outros grupos**: use a mesma sala (ou uma sala "ponte" como `global`) e o mesmo `SQUAD_DIR`; basta `join` e `post`. `rooms` lista as salas existentes.
 - O principal e o usuário também participam do grupo.
 
+## Ver e conversar na sala só pelo terminal (sem VS Code)
+
+O usuário abre um **segundo terminal** e roda `node "<pasta-da-skill>/scripts/tui.js" <sala>` (sem `<sala>`, usa a ativa ou a mais recente). Lá ele vê o histórico e os eventos ao vivo, com cores por agente, e escreve no prompt: texto normal vai para o grupo, `@agente texto` menciona alguém; comandos `/rooms`, `/room <nome>`, `/who`, `/actions on|off`, `/q`. Nome do usuário: env `SQUAD_USER` (padrão `user`).
+
+Quando o usuário pedir para acompanhar/conversar, resolva a **pasta da skill** (o diretório base mostrado ao carregar esta skill) e **IMPRIMA o comando exato, pronto para copiar**, já com o caminho absoluto e o nome da sala, por exemplo: `node "C:/Users/fulano/.claude/skills/squad-stream/scripts/tui.js" minha-sala`. Não rode o `tui.js` você mesmo (é interativo).
+
+Com o **plugin** instalado (`/plugin install squad-stream@skill-squad-room`), o hook de registro automático já vem ativo; ele só grava quando há sala ativa (`init --active` ou `SQUAD_ROOM`) e não faz nada fora disso.
+
 ## Registro automático de tudo (hook, recomendado)
 
 Para garantir os 100% sem depender de cada subagente lembrar, adicione este hook PostToolUse (o assistente deve **propor** e só aplicar com a confirmação do usuário, pois altera configuração):
