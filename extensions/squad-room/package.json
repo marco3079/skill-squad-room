@@ -1,0 +1,55 @@
+{
+  "name": "squad-room",
+  "displayName": "Squad Room",
+  "description": "Veja ao vivo a sala de comunicação dos agentes (skill squad-stream) e converse com eles.",
+  "version": "0.1.0",
+  "publisher": "bottomup",
+  "license": "MIT",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Other"],
+  "main": "./extension.js",
+  "activationEvents": [],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        { "id": "squadRoom", "title": "Squad Room", "icon": "$(comment-discussion)" }
+      ]
+    },
+    "views": {
+      "squadRoom": [
+        { "id": "squadRoom.view", "name": "Sala dos agentes", "type": "webview" }
+      ]
+    },
+    "commands": [
+      { "command": "squadRoom.newRoom", "title": "Nova sala", "category": "Squad Room", "icon": "$(add)" },
+      { "command": "squadRoom.openLog", "title": "Abrir log da sala (JSONL)", "category": "Squad Room", "icon": "$(go-to-file)" },
+      { "command": "squadRoom.focus", "title": "Abrir painel", "category": "Squad Room" }
+    ],
+    "menus": {
+      "view/title": [
+        { "command": "squadRoom.newRoom", "when": "view == squadRoom.view", "group": "navigation@1" },
+        { "command": "squadRoom.openLog", "when": "view == squadRoom.view", "group": "navigation@2" }
+      ]
+    },
+    "configuration": {
+      "title": "Squad Room",
+      "properties": {
+        "squadRoom.dir": {
+          "type": "string",
+          "default": "",
+          "description": "Pasta das salas. Vazio = variável SQUAD_DIR ou ~/.claude-squad (mesma da skill squad-stream)."
+        },
+        "squadRoom.userName": {
+          "type": "string",
+          "default": "user",
+          "description": "Nome com que suas mensagens aparecem na sala."
+        },
+        "squadRoom.maxEvents": {
+          "type": "number",
+          "default": 1000,
+          "description": "Quantidade máxima de eventos carregados ao abrir uma sala."
+        }
+      }
+    }
+  }
+}
