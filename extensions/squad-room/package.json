@@ -2,7 +2,7 @@
   "name": "squad-room",
   "displayName": "Squad Room",
   "description": "Veja ao vivo a sala de comunicação dos agentes (skill squad-stream) e converse com eles.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "bottomup",
   "license": "MIT",
   "engines": { "vscode": "^1.85.0" },

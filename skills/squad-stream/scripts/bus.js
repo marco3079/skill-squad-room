@@ -44,13 +44,19 @@ function ensureRoom(room) {
 
 function post(room, ev) {
   ensureRoom(room);
+  // Conversa é SEMPRE pública no grupo: "--to X" vira uma menção "@X" dentro da mensagem.
+  let text = String(ev.text == null ? '' : ev.text);
+  const target = ev.to && ev.to !== 'all' ? String(ev.to) : null;
+  if (target && !text.includes('@' + target)) text = '@' + target + ' ' + text;
+  const mentions = [...new Set((text.match(/@([\w.-]+)/g) || []).map((s) => s.slice(1)))];
   const e = {
     ts: new Date().toISOString(),
     from: ev.from || 'main',
-    to: ev.to || 'all',
+    to: 'all',
     type: ev.type || 'msg',
     file: ev.file || undefined,
-    text: String(ev.text == null ? '' : ev.text).slice(0, 4000),
+    text: text.slice(0, 4000),
+    mentions: mentions.length ? mentions : undefined,
   };
   fs.appendFileSync(logFile(room), JSON.stringify(e) + '\n');
   return e;
@@ -73,13 +79,15 @@ function fmt(e) {
   return `[${t}] ${arrow} (${e.type})${f}${txt ? ': ' + txt : ''}`;
 }
 
+const fmtFor = (e, agent) => ((e.mentions || []).includes(agent) ? '★ ' : '') + fmt(e);
+
 const cursorFile = (room, agent) => path.join(roomDir(room), 'cursors', agent.replace(/[^\w.-]/g, '_'));
 function getCursor(room, agent) {
   try { return parseInt(fs.readFileSync(cursorFile(room, agent), 'utf8'), 10) || 0; } catch (e) { return 0; }
 }
 
 // eventos informativos que só aparecem no tail, nunca na caixa de entrada de um agente
-const NOISE = new Set(['system', 'join', 'leave', 'edit', 'claim', 'release']);
+const NOISE = new Set(['system', 'join', 'leave', 'edit', 'claim', 'release', 'action']);
 
 function inbox(room, agent, peek) {
   const all = readAll(room);
@@ -191,14 +199,14 @@ async function main() {
     case 'inbox': {
       const msgs = inbox(room, agent, !!o.peek);
       if (!msgs.length) console.log('(sem mensagens novas)');
-      for (const e of msgs) console.log(fmt(e));
+      for (const e of msgs) console.log(fmtFor(e, agent));
       break;
     }
     case 'wait': {
       const deadline = Date.now() + (parseFloat(o.timeout) || 60) * 1000;
       for (;;) {
         const msgs = inbox(room, agent, false);
-        if (msgs.length) { for (const e of msgs) console.log(fmt(e)); return; }
+        if (msgs.length) { for (const e of msgs) console.log(fmtFor(e, agent)); return; }
         if (Date.now() > deadline) { console.log('(timeout sem mensagens)'); process.exit(3); }
         await sleep(500);
       }
@@ -247,9 +255,10 @@ async function main() {
       console.log(`uso: node bus.js <comando> <sala> [opções]
   init <sala> [--active]                  cria a sala (--active: hooks passam a usá-la)
   join <sala> --agent N [--role "..."]    entra na sala
-  post <sala> --from N [--to N|all] [--type msg|status|edit|question|done] [--file F] --text "..."   (ou texto via stdin)
+  post <sala> --from N [--to N (vira @N no grupo)] [--type status|note|action|edit|question|answer|msg|done] [--file F] --text "..."   (ou texto via stdin)
+                                            Conversa é sempre pública: perguntas usam @nome no texto.
   tail <sala> [--follow] [--from-start] [--agent N] [--types a,b]   stream de eventos (use com Monitor)
-  inbox <sala> --agent N [--peek]         mensagens novas para N
+  inbox <sala> --agent N [--peek]         mensagens novas do grupo (★ = menciona N; ações/edições só no tail)
   wait <sala> --agent N [--timeout 60]    bloqueia até chegar mensagem para N
   claim <sala> --agent N --file F         reserva arquivo (exit 2 se ocupado)
   release <sala> --agent N [--file F|--all]

@@ -40,6 +40,12 @@ O instalador copia a skill para `~/.claude/skills/squad-stream` e instala `dist/
 2. Abra o ícone **Squad Room** na barra lateral do VS Code: a sala aparece sozinha.
 3. Para falar com os agentes, escolha o destinatário na caixa, escreva e aperte Enter.
 
+### Regras do grupo
+
+- **Transparência total:** cada subagente publica **tudo** que faz no grupo: plano, comandos, leituras, edições (com o que mudou), resultados, erros e decisões.
+- **Conversa só no grupo:** não há mensagem privada. Para perguntar algo a outro agente, ele escreve no grupo com `@nome` (e a resposta também vai no grupo). Você pode fazer o mesmo pela caixa da extensão; o seletor "Mencionar" só adiciona o `@agente` à sua mensagem.
+- **Registro automático (opcional):** o hook `skills/squad-stream/scripts/hook-post-tool.js` registra toda ferramenta usada pelos agentes (Bash, Read, Grep, Edit…), com segredos comuns mascarados. Instruções de ativação em `skills/squad-stream/SKILL.md`; só é adicionado ao seu `settings.json` se você pedir.
+
 As salas ficam em `~/.claude-squad/<sala>/log.jsonl` (mude com a variável `SQUAD_DIR`, ou a configuração `squadRoom.dir` da extensão).
 
 ## Limitações
@@ -52,7 +58,7 @@ As salas ficam em `~/.claude-squad/<sala>/log.jsonl` (mude com a variável `SQUA
 ## Estrutura
 
 ```
-skills/squad-stream/     skill + scripts/bus.js (canal) + hook opcional
+skills/squad-stream/     skill + scripts/bus.js (canal) + hook-post-tool.js (opcional)
 extensions/squad-room/   código-fonte da extensão
 dist/                    .vsix pronto para instalar
 install.js               instalador (Windows, macOS, Linux)

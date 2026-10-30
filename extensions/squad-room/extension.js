@@ -148,14 +148,18 @@ class RoomView {
     text = String(text || '').trim();
     if (!text) return;
     if (!this.room) { vscode.window.showWarningMessage('Squad Room: selecione ou crie uma sala primeiro.'); return; }
-    const t = String(to || 'all');
+    // Conversa sempre pública no grupo: destinatário vira "@nome" dentro da mensagem.
+    const t = /^[\w.-]{1,64}$/.test(String(to || '')) ? String(to) : 'all';
+    if (t !== 'all' && !text.includes('@' + t)) text = '@' + t + ' ' + text;
+    const mentions = [...new Set((text.match(/@([\w.-]+)/g) || []).map((s) => s.slice(1)))];
     const ev = {
       ts: new Date().toISOString(),
       from: userName(),
-      to: /^[\w.-]{1,64}$/.test(t) ? t : 'all',
+      to: 'all',
       type: type === 'question' ? 'question' : 'msg',
       text: text.slice(0, 4000),
     };
+    if (mentions.length) ev.mentions = mentions;
     try {
       fs.mkdirSync(path.dirname(logPath(this.room)), { recursive: true });
       fs.appendFileSync(logPath(this.room), JSON.stringify(ev) + '\n');
@@ -217,11 +221,15 @@ function html(csp, nonce) {
   .ev .a { font-weight: 600; }
   .ev .to { color: var(--vscode-descriptionForeground); }
   .badge { font-size: .78em; padding: 0 5px; border-radius: 8px; margin-left: 4px; background: var(--vscode-badge-background); color: var(--vscode-badge-foreground); }
-  .ev.edit .txt, .ev.claim .txt, .ev.release .txt, .ev.system, .ev.join, .ev.leave { color: var(--vscode-descriptionForeground); }
+  .ev.edit .txt, .ev.action .txt, .ev.claim .txt, .ev.release .txt, .ev.system, .ev.join, .ev.leave { color: var(--vscode-descriptionForeground); }
   .ev.question .badge { background: var(--vscode-editorWarning-foreground); color: #000; }
   .ev.done .badge { background: var(--vscode-gitDecoration-addedResourceForeground, #81b88b); color: #000; }
   .ev.me { background: var(--vscode-list-hoverBackground); border-radius: 4px; padding: 2px 6px; }
   .ev.tome { border-left: 3px solid var(--vscode-editorWarning-foreground); padding-left: 6px; }
+  .ev.action .txt { font-family: var(--vscode-editor-font-family); font-size: .92em; }
+  .ev.note .txt { font-style: italic; }
+  .ev.answer .badge { background: var(--vscode-gitDecoration-addedResourceForeground, #81b88b); color: #000; }
+  b.mention { color: var(--vscode-textLink-foreground); font-weight: 600; }
   a.file { color: var(--vscode-textLink-foreground); cursor: pointer; text-decoration: none; }
   a.file:hover { text-decoration: underline; }
   .empty { color: var(--vscode-descriptionForeground); padding: 10px 2px; line-height: 1.5; }
@@ -235,16 +243,16 @@ function html(csp, nonce) {
 <body>
 <div class="bar">
   <select id="room" title="Sala"></select>
-  <label class="f"><input type="checkbox" id="fEdit" checked> edições</label>
+  <label class="f"><input type="checkbox" id="fEdit" checked> ações dos agentes</label>
   <label class="f"><input type="checkbox" id="fSys" checked> sistema</label>
   <label class="f"><input type="checkbox" id="fScroll" checked> rolar</label>
 </div>
 <div class="who" id="who"></div>
 <div id="log"></div>
 <div class="comp">
-  <div class="row"><span>Para:</span><select id="to"><option value="all">todos</option></select>
+  <div class="row"><span>Mencionar:</span><select id="to"><option value="all">todos</option></select>
     <label class="f"><input type="checkbox" id="isQ"> pergunta</label></div>
-  <textarea id="txt" placeholder="Escreva para os agentes… (Enter envia, Shift+Enter quebra linha)"></textarea>
+  <textarea id="txt" placeholder="Escreva no grupo… (a menção @agente é adicionada pelo seletor; Enter envia)"></textarea>
   <div class="row"><button id="send">Enviar</button><span id="hint" style="color:var(--vscode-descriptionForeground);font-size:.9em"></span></div>
 </div>
 <script nonce="${nonce}">
@@ -259,7 +267,7 @@ function html(csp, nonce) {
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const timeOf = (ts) => { const d = new Date(ts); return isNaN(d) ? '' : d.toLocaleTimeString(); };
   const NOISE = new Set(['system', 'join', 'leave']);
-  const EDITS = new Set(['edit', 'claim', 'release']);
+  const EDITS = new Set(['edit', 'claim', 'release', 'action']);
 
   function track(e) {
     if (!e || !e.from) return;
@@ -278,16 +286,17 @@ function html(csp, nonce) {
     sel.innerHTML = '<option value="all">todos</option>' + names.map((n) => '<option value="' + esc(n) + '">' + esc(n) + '</option>').join('');
     if ([...sel.options].some((o) => o.value === cur)) sel.value = cur;
   }
+  const hl = (s) => s.replace(/@([\\w.-]+)/g, '<b class="mention">@$1</b>');
   function row(e) {
     const t = e.type || 'msg';
     if (EDITS.has(t) && !$('fEdit').checked) return '';
     if (NOISE.has(t) && !$('fSys').checked) return '';
     const mine = e.from === me;
-    const toMe = e.to === me || e.to === 'user' || e.to === 'main';
+    const toMe = e.to === me || e.to === 'user' || e.to === 'main' || (e.mentions || []).some((x) => x === me || x === 'user' || x === 'main');
     const to = e.to && e.to !== 'all' ? ' <span class="to">→ ' + esc(e.to) + '</span>' : '';
     const file = e.file ? ' <a class="file" data-file="' + esc(e.file) + '">' + esc(e.file) + '</a>' : '';
     const badge = t === 'msg' ? '' : '<span class="badge">' + esc(t) + '</span>';
-    return '<div class="ev ' + esc(t) + (mine ? ' me' : '') + (toMe && !mine ? ' tome' : '') + '"><span class="t">' + esc(timeOf(e.ts)) + '</span><span class="a" style="color:' + color(e.from) + '">' + esc(e.from) + '</span>' + to + badge + file + (e.text ? ' <span class="txt">' + esc(e.text).replace(/\\n/g, '<br>') + '</span>' : '') + '</div>';
+    return '<div class="ev ' + esc(t) + (mine ? ' me' : '') + (toMe && !mine ? ' tome' : '') + '"><span class="t">' + esc(timeOf(e.ts)) + '</span><span class="a" style="color:' + color(e.from) + '">' + esc(e.from) + '</span>' + to + badge + file + (e.text ? ' <span class="txt">' + hl(esc(e.text)).replace(/\\n/g, '<br>') + '</span>' : '') + '</div>';
   }
   function renderAll() {
     const log = $('log');
