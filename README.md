@@ -27,13 +27,13 @@ Este repositório tem duas peças que funcionam juntas:
 
 ## Instalar com um prompt
 
-Abra o Claude Code (no VS Code ou no terminal) e cole:
+Abra o Claude Code (desktop, VS Code ou terminal), cole o link do repositório com o pedido abaixo e envie:
 
 ```
 Instale o projeto https://github.com/marco3079/skill-squad-room seguindo o INSTALL.md do repositório.
 ```
 
-O Claude baixa o repositório, mostra o que vai fazer, pede sua confirmação e roda o instalador.
+O Claude baixa o repositório, mostra o que vai fazer, pede sua confirmação e instala tudo de uma vez: a skill, o painel `/sala` do Claude Code desktop e a extensão do VS Code. Funciona no Claude Code desktop e no VS Code.
 Depois: recarregue o VS Code (`Ctrl+Shift+P` → *Developer: Reload Window*) e abra uma nova sessão do Claude Code.
 
 ### Instalar manualmente

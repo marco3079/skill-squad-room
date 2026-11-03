@@ -6,6 +6,7 @@
 //   node install.js --dry-run     só mostra o que faria, sem alterar nada
 //   node install.js --skill       só as skills (pasta skills/)
 //   node install.js --extensions  só as extensões do VS Code (arquivos de dist/)
+//   node install.js --plugins    só o painel do Claude Code desktop (/plugin); --no-plugins pula esse passo
 //   node install.js --build       reempacota os .vsix a partir de extensions/ antes de instalar (precisa de npm/npx)
 //   node install.js --editor cursor   usa outro editor compatível com VS Code (padrão: code)
 //   node install.js --hooks           SÓ o hook de registro automático: mescla uma entrada PostToolUse em
@@ -35,6 +36,7 @@ const hooksMode = has('--hooks') || has('--remove-hooks');
 // --hooks / --remove-hooks sozinhos só mexem no settings.json (a menos que --skill/--extensions também sejam passados)
 const doSkill = (onlySkill || (!onlyExt && !hooksMode)) && fs.existsSync(skillsDir);
 const doExt = (onlyExt || (!onlySkill && !hooksMode)) && fs.existsSync(extDir);
+const doPlugins = has('--plugins') || (!onlySkill && !onlyExt && !hooksMode && !has('--no-plugins'));
 const editor = opt('--editor', 'code');
 const log = (m) => console.log(m);
 const step = (m) => log(`${dry ? '[simulação] ' : ''}${m}`);
@@ -70,6 +72,22 @@ function installSkills() {
     }
   }
   return ok;
+}
+
+// Painel visual do Claude Code desktop (pasta mods/): registra este repositório como marketplace e instala o plugin.
+function installPlugins() {
+  const MARKET = 'skill-squad-room';
+  const PLUGIN = 'squad-room-pane';
+  const probe = run('claude', ['--version']);
+  if (!probe.ok) { log('Aviso: comando "claude" não encontrado; pulei o painel do Claude Code desktop. Instale depois com: /plugin install ' + PLUGIN + ' --marketplace marco3079/' + MARKET); return true; }
+  step('Registrando marketplace marco3079/' + MARKET + ' e instalando o plugin ' + PLUGIN);
+  if (dry) return true;
+  const add = run('claude', ['plugin', 'marketplace', 'add', 'marco3079/' + MARKET]);
+  if (!add.ok) { log('ERRO ao registrar o marketplace:' + String.fromCharCode(10) + add.out); return false; }
+  const inst = run('claude', ['plugin', 'install', PLUGIN + '@' + MARKET]);
+  if (!inst.ok) { log('ERRO ao instalar o plugin:' + String.fromCharCode(10) + inst.out); return false; }
+  log('Plugin ' + PLUGIN + ' instalado.');
+  return true;
 }
 
 function buildVsix() {
@@ -172,6 +190,7 @@ log(`${path.basename(here)} — instalador`);
 let ok = true;
 if (doSkill) ok = installSkills() && ok;
 if (doExt) ok = installExtensions() && ok;
+if (doPlugins) ok = installPlugins() && ok;
 if (hooksMode) {
   if (has('--hooks') && has('--remove-hooks')) { log('ERRO: use --hooks OU --remove-hooks, não os dois.'); process.exit(1); }
   ok = manageHooks(has('--remove-hooks')) && ok;
@@ -183,6 +202,7 @@ else if (ok) {
   log('\nConcluído.');
   if (doExt) log('→ Recarregue o VS Code: Ctrl+Shift+P → "Developer: Reload Window".');
   if (doSkill) log('→ Abra uma NOVA sessão do Claude Code para a skill aparecer.');
+  if (doPlugins) log('→ No Claude Code desktop: /reload-plugins e depois /sala.');
   if (hooksMode) log('→ Abra uma NOVA sessão do Claude Code para o hook valer. Ele só grava quando há sala ativa.');
 } else {
   log('\nTerminou com erros (veja acima).');
