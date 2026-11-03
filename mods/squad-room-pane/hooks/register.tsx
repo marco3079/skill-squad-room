@@ -23,6 +23,7 @@ const ui = atom(
 let chosen = ''
 let lastSig = ''
 let seenTs = ''
+let opened = false
 let isPrimed = false
 
 let HOME = ''
@@ -206,7 +207,15 @@ export const register: Register = on => {
     void refresh($, root)
     $.clock.every(1500, () => { void refresh($, root) })
     // Abre o painel sozinho ao iniciar a sessão (sem roubar o foco do chat).
-    void $.ui.open({ id: PANE, title: 'Sala dos agentes', focus: false }).catch(() => undefined)
+    // O app pode ainda não ter a superfície pronta ao iniciar: tenta de novo algumas vezes até desenhar.
+    for (const ms of [0, 2000, 5000, 10000]) {
+      $.clock.after(ms, async () => {
+        if (opened) return
+        const r = await $.ui.open({ id: PANE, title: 'Sala dos agentes', focus: false }).catch(() => undefined)
+        if (r && r.isPlaced) opened = true
+        else if (r) $.ui.log('Sala dos agentes: não abriu (' + r.reason + ')')
+      })
+    }
     return next(e)
   })
 
