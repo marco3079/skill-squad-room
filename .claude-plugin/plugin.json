@@ -2,6 +2,6 @@
   "name": "squad-stream",
   "version": "0.2.0",
   "description": "Orquestra subagentes em paralelo numa sala compartilhada com transparência total em tempo real; acompanhe e converse pelo terminal.",
-  "author": { "name": "SEU_USUARIO" },
+  "author": { "name": "marco3079" },
   "license": "MIT"
 }

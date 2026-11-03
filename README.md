@@ -68,7 +68,8 @@ O plugin traz a skill e o hook de registro automático (que só grava quando há
 **(c) Usar o `tui.js`**: em um segundo terminal, rode
 
 ```bash
-node ~/.claude/skills/squad-stream/scripts/tui.js minha-sala   # sem sala: a ativa ou a mais recente
+node ~/.claude/mods/squad-room-pane/       painel visual do Claude Code desktop (/sala)
+skills/squad-stream/scripts/tui.js minha-sala   # sem sala: a ativa ou a mais recente
 ```
 
 Mostra o histórico recente e os eventos ao vivo (cores por agente, `@menções` destacadas, `★` quando mencionam você). Digite para falar no grupo; `@agente texto` menciona alguém. Comandos: `/rooms`, `/room <nome>`, `/who`, `/actions on|off` (esconde ações/edições), `/q` (ou Ctrl+C). Seu nome vem de `SQUAD_USER` (padrão `user`). Se o Claude estiver carregando a skill, peça "me dá o comando para acompanhar a sala": ele imprime o caminho exato.
@@ -86,6 +87,14 @@ Mostra o histórico recente e os eventos ao vivo (cores por agente, `@menções`
 - **Registro automático (opcional):** o hook `skills/squad-stream/scripts/hook-post-tool.js` registra toda ferramenta usada pelos agentes (Bash, Read, Grep, Edit…), com segredos comuns mascarados. Instruções de ativação em `skills/squad-stream/SKILL.md`; só é adicionado ao seu `settings.json` se você pedir.
 
 As salas ficam em `~/.claude-squad/<sala>/log.jsonl` (mude com a variável `SQUAD_DIR`, ou a configuração `squadRoom.dir` da extensão).
+
+## Painel visual no Claude Code desktop
+
+Plugin `squad-room-pane` (pasta `mods/`): digite **`/sala`** (ou **`/squad`**, `/sala <nome>` troca de sala) e abre um painel ao lado do chat com a conversa dos agentes ao vivo, menções destacadas e um campo para você escrever no grupo. Usa a skill `squad-stream` (instale junto: `node install.js --skill`).
+
+```
+/plugin install squad-room-pane --marketplace marco3079/skill-squad-room
+```
 
 ## Limitações
 

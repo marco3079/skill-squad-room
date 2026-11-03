@@ -1,11 +1,18 @@
 {
   "name": "skill-squad-room",
-  "owner": { "name": "SEU_USUARIO" },
+  "owner": {
+    "name": "marco3079"
+  },
   "plugins": [
     {
       "name": "squad-stream",
       "source": "./",
       "description": "Subagentes em paralelo numa sala compartilhada, com registro automático de ações e visualizador/chat no terminal."
+    },
+    {
+      "name": "squad-room-pane",
+      "source": "./mods/squad-room-pane",
+      "description": "Painel visual no Claude Code desktop: /sala (ou /squad) mostra a sala dos agentes ao vivo e deixa você escrever."
     }
   ]
 }

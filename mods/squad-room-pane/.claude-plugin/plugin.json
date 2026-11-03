@@ -1,0 +1,8 @@
+{
+  "name": "squad-room-pane",
+  "version": "0.1.0",
+  "description": "Painel \"Sala dos agentes\": acompanhe ao vivo o grupo dos subagentes (skill squad-stream) e escreva nele. Abre com /sala.",
+  "author": { "name": "marco3079" },
+  "license": "MIT",
+  "types": "./types/index.d.ts"
+}
