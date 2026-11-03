@@ -205,6 +205,8 @@ export const register: Register = on => {
     const root = $.plugin.root
     void refresh($, root)
     $.clock.every(1500, () => { void refresh($, root) })
+    // Abre o painel sozinho ao iniciar a sessão (sem roubar o foco do chat).
+    void $.ui.open({ id: PANE, title: 'Sala dos agentes', focus: false }).catch(() => undefined)
     return next(e)
   })
 
